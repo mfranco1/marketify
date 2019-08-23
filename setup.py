@@ -8,7 +8,7 @@ setup(
   author='Marcelino Franco',
   author_email='mcfranco16@gmail.com',
   url='https://github.com/mfranco1/marketify',
-  download_url='https://github.com/mfranco1/marketify/archive/v_01.tar.gz',
+  download_url='https://github.com/mfranco1/marketify/archive/v_020.tar.gz',
   keywords=['Trading', 'Market', 'Exchange', 'Websocket', 'Async'],
   install_requires=[
       'aiodns',
