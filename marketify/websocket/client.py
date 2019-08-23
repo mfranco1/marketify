@@ -10,7 +10,9 @@ import websockets
 class WSClient:
     invalid_dict = {"is_valid": False}
 
-    def __init__(self, source_map, crypto="BTC", currency="USD", debounce_interval=2):
+    def __init__(
+        self, source_map, crypto="BTC", currency="USD", debounce_interval=2
+    ):
         """
         :param source_map:  (dict) that maps the details of an API
         :param crypto:      cryptocurrency code
@@ -27,8 +29,7 @@ class WSClient:
 
         self.subject = Subject()
         filtered_data = self.subject.pipe(
-            rx_ops.debounce(debounce_interval),
-            rx_ops.distinct_until_changed(),
+            rx_ops.debounce(debounce_interval), rx_ops.distinct_until_changed()
         )
 
         def on_error(err):
@@ -52,6 +53,8 @@ class WSClient:
                 # special case of catch all to avoid killing all tasks in this thread
                 except Exception as exc:
                     self.log(msg=f"Catch-all triggered on: {exc}")
+                finally:
+                    self.get_timer_func()()
 
     def parse_response(self, resp):
         return json.loads(resp)
@@ -68,6 +71,9 @@ class WSClient:
     def log(self, msg=""):
         logging.warning(msg=msg)
 
+    def get_timer_func(self):
+        pass
+
     @abstractmethod
     def map_response(self, resp):
         """ abstract method to convert raw ws response to dict """
@@ -79,4 +85,3 @@ class WSClient:
     @abstractmethod
     def get_on_next(self):
         """ abstract method that returns a function to perform """
-
