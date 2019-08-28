@@ -2,9 +2,10 @@ import json
 import logging
 from abc import abstractmethod
 
+import websockets
 from rx import operators as rx_ops
 from rx.subject import Subject
-import websockets
+from websockets.exceptions import ConnectionClosed
 
 
 class WSClient:
@@ -38,23 +39,30 @@ class WSClient:
         filtered_data.subscribe(on_next=self.get_on_next(), on_error=on_error)
 
     async def run(self):
-        async with websockets.connect(self.url, ssl=True) as ws:
-            await ws.send(json.dumps(self.websocket_msg))
+        while True:
+            async with websockets.connect(self.url, ssl=True) as ws:
+                await ws.send(json.dumps(self.websocket_msg))
 
-            while True:
-                try:
-                    msg = await ws.recv()
-                    market_values = self.map_response(self.parse_response(msg))
+                while True:
+                    try:
+                        msg = await ws.recv()
+                        market_values = self.map_response(
+                            self.parse_response(msg)
+                        )
 
-                    if market_values["is_valid"] is False:
-                        continue
+                        if market_values["is_valid"] is False:
+                            continue
 
-                    self.subject.on_next(market_values)
-                # special case of catch all to avoid killing all tasks in this thread
-                except Exception as exc:
-                    self.log(msg=f"Catch-all triggered on: {exc}")
-                finally:
-                    self.get_timer_func()()
+                        self.subject.on_next(market_values)
+                    except ConnectionClosed as exc:
+                        self.log(msg=f"connection is closed! - {exc}")
+                        break
+                    # special case of catch all to avoid killing all tasks in this thread
+                    except Exception as exc:
+                        self.log(msg=f"Catch-all triggered on: {exc}")
+                    finally:
+                        await ws.ping()
+                        self.get_timer_func()()
 
     def parse_response(self, resp):
         return json.loads(resp)

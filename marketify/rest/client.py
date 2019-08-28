@@ -29,9 +29,9 @@ class RestClient:
 
     async def run(self):
         async with aiohttp.ClientSession() as session:
+            url = f"{self.url}{self.get_url_extension()}"
             while True:
                 try:
-                    url = f"{self.url}{self.get_url_extension()}"
                     await self.fetch(session=session, url=url)
                 # special case of catch all to avoid killing all tasks in this thread
                 except Exception as exc:
@@ -44,7 +44,7 @@ class RestClient:
             resp = await resp.json()
             market_values = self.map_response(self.parse_response(resp))
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(self.get_sleep_interval())
             if market_values["is_valid"] is False:
                 return
 
@@ -67,6 +67,9 @@ class RestClient:
 
     def get_timer_func(self):
         pass
+
+    def get_sleep_interval(self):
+        return 2
 
     @abstractmethod
     def map_response(self, resp):
